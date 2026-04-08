@@ -118,8 +118,10 @@ The output is written to `dist/` as `power-profile-cycler@solder3t.shell-extensi
 
 ## GitHub Releases
 
+### Automatic release from a tag push
+
 1. Commit your changes.
-2. Create a tag:
+2. Create and push a tag:
 
 ```bash
 git tag v1.0.0
@@ -129,7 +131,17 @@ git push origin v1.0.0
 3. GitHub Actions builds `power-profile-cycler@solder3t.shell-extension.zip`.
 4. After the build succeeds, the workflow creates or updates the GitHub release automatically.
 5. The built extension zip is attached to that release as a release asset.
-6. Manual workflow runs upload the zip as an Actions artifact, but do not create a release.
+
+### Manual release from GitHub Actions
+
+1. Make sure the tag already exists on GitHub, for example `v1.0.0`.
+2. Open the `Release Extension` workflow in the `Actions` tab.
+3. Click `Run workflow`.
+4. Set `create_release` to `true`.
+5. Set `tag_name` to the existing tag you want to publish, for example `v1.0.0`.
+6. Run the workflow.
+
+The workflow will build the extension zip and then create or update the GitHub release for that tag.
 
 ## License
 
