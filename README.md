@@ -11,7 +11,7 @@ A GNOME Shell extension that cycles through power profiles with a keyboard short
 
 ## Requirements
 
-- GNOME Shell 50
+- GNOME Shell 49 or 50
 - `power-profiles-daemon`
 - `powerprofilesctl`
 
