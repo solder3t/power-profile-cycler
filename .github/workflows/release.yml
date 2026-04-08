@@ -32,7 +32,9 @@ jobs:
 
       - name: Checkout requested tag
         if: github.event_name == 'workflow_dispatch' && inputs.tag_name != ''
-        run: git checkout "refs/tags/${{ inputs.tag_name }}"
+        run: |
+          git fetch origin "refs/tags/${{ inputs.tag_name }}:refs/tags/${{ inputs.tag_name }}"
+          git checkout "refs/tags/${{ inputs.tag_name }}"
 
       - name: Install GNOME extension tools
         run: sudo apt-get update && sudo apt-get install -y gnome-shell
