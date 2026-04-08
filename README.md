@@ -36,21 +36,7 @@ gnome-extensions enable power-profile-cycler@solder3t
 
 6. Log out and back in if GNOME Shell does not pick it up immediately.
 
-### Option 2: Install from a GitHub Actions artifact
-
-1. Open a workflow run in the `Actions` tab.
-2. Download the artifact named `power-profile-cycler-shell-extension`.
-3. Extract the downloaded GitHub artifact zip once.
-4. Inside it, you will find `power-profile-cycler@solder3t.shell-extension.zip`.
-5. Do not extract that inner file.
-6. Install it with:
-
-```bash
-gnome-extensions install --force power-profile-cycler@solder3t.shell-extension.zip
-gnome-extensions enable power-profile-cycler@solder3t
-```
-
-### Option 3: Install from a source checkout
+### Option 2: Install from a source checkout
 
 1. Copy only the extension files into your local GNOME Shell extensions directory:
 
