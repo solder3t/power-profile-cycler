@@ -28,13 +28,18 @@ A GNOME Shell extension that cycles through power profiles with a keyboard short
 gnome-extensions install power-profile-cycler@solder3t.shell-extension.zip
 ```
 
-5. Enable it:
+5. Log out and log back in.
+
+6. Enable it:
 
 ```bash
 gnome-extensions enable power-profile-cycler@solder3t
 ```
 
-6. Log out and back in if GNOME Shell does not pick it up immediately.
+You can also enable it from:
+
+- GNOME Extensions
+- Extension Manager
 
 If you are reinstalling or updating an already installed local copy, use:
 
