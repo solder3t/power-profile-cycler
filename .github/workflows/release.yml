@@ -23,7 +23,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: power-profile-cycler
+          name: power-profile-cycler-shell-extension
           path: dist/*.zip
 
       - name: Upload release asset

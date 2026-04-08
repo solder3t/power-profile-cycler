@@ -17,7 +17,40 @@ A GNOME Shell extension that cycles through power profiles with a keyboard short
 
 ## Installation
 
-### From source checkout
+### Option 1: Install from GitHub release
+
+1. Open the latest GitHub release for this repository.
+2. Download `power-profile-cycler@solder3t.shell-extension.zip`.
+3. Do not extract that file. GNOME installs the extension from the zip itself.
+4. Install it with:
+
+```bash
+gnome-extensions install --force power-profile-cycler@solder3t.shell-extension.zip
+```
+
+5. Enable it:
+
+```bash
+gnome-extensions enable power-profile-cycler@solder3t
+```
+
+6. Log out and back in if GNOME Shell does not pick it up immediately.
+
+### Option 2: Install from a GitHub Actions artifact
+
+1. Open a workflow run in the `Actions` tab.
+2. Download the artifact named `power-profile-cycler-shell-extension`.
+3. Extract the downloaded GitHub artifact zip once.
+4. Inside it, you will find `power-profile-cycler@solder3t.shell-extension.zip`.
+5. Do not extract that inner file.
+6. Install it with:
+
+```bash
+gnome-extensions install --force power-profile-cycler@solder3t.shell-extension.zip
+gnome-extensions enable power-profile-cycler@solder3t
+```
+
+### Option 3: Install from a source checkout
 
 1. Copy only the extension files into your local GNOME Shell extensions directory:
 
@@ -36,31 +69,16 @@ cp schemas/org.gnome.shell.extensions.power-profile-cycler.gschema.xml "$DEST/sc
 glib-compile-schemas "$DEST/schemas"
 ```
 
-3. Reload GNOME Shell extensions:
+3. Enable the extension:
+
+```bash
+gnome-extensions enable power-profile-cycler@solder3t
+```
+
+4. Reload GNOME Shell extensions:
 
 - Log out and back in, or
 - Disable and re-enable the extension from the Extensions app
-
-4. Enable the extension:
-
-```bash
-gnome-extensions enable power-profile-cycler@solder3t
-```
-
-### From packaged zip
-
-Build the zip locally:
-
-```bash
-./scripts/package.sh
-```
-
-Then install it with:
-
-```bash
-gnome-extensions install --force dist/power-profile-cycler@solder3t.shell-extension.zip
-gnome-extensions enable power-profile-cycler@solder3t
-```
 
 ## Configuration
 
@@ -100,9 +118,17 @@ The output is written to `dist/` as `power-profile-cycler@solder3t.shell-extensi
 
 ## GitHub Releases
 
-- Push a tag like `v1.0.0`
-- GitHub Actions will build the extension zip
-- The workflow uploads the zip as both an artifact and a GitHub release asset
+1. Commit your changes.
+2. Create a tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+3. GitHub Actions builds `power-profile-cycler@solder3t.shell-extension.zip`.
+4. The tag workflow uploads that file as a GitHub release asset.
+5. Manual workflow runs also upload it as an Actions artifact.
 
 ## License
 
