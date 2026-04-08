@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="power-profile-cycler@solder3t" path="/org/gnome/shell/extensions/power-profile-cycler/">
+    <key name="keyboard-shortcut" type="as">
+      <default><![CDATA[['<Control><Alt>p']]]></default>
+      <summary>Keyboard shortcut to cycle power profiles</summary>
+      <description>The keyboard shortcut that triggers cycling through power profiles</description>
+    </key>
+    <key name="show-osd" type="b">
+      <default>true</default>
+      <summary>Show profile OSD</summary>
+      <description>Show a GNOME-style on-screen display when the active power profile changes</description>
+    </key>
+  </schema>
+</schemalist>
