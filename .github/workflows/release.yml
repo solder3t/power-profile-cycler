@@ -58,4 +58,8 @@ jobs:
         with:
           generate_release_notes: true
           tag_name: ${{ inputs.tag_name || github.ref_name }}
+          body: |
+            Install the attached `power-profile-cycler@solder3t.shell-extension.zip` file directly with GNOME Extensions.
+
+            Do not use GitHub's auto-generated `Source code (zip)` or `Source code (tar.gz)` archives for installation.
           files: dist/*.zip
