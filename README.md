@@ -127,8 +127,9 @@ git push origin v1.0.0
 ```
 
 3. GitHub Actions builds `power-profile-cycler@solder3t.shell-extension.zip`.
-4. The tag workflow uploads that file as a GitHub release asset.
-5. Manual workflow runs also upload it as an Actions artifact.
+4. After the build succeeds, the workflow creates or updates the GitHub release automatically.
+5. The built extension zip is attached to that release as a release asset.
+6. Manual workflow runs upload the zip as an Actions artifact, but do not create a release.
 
 ## License
 
