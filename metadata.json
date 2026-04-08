@@ -2,7 +2,7 @@
   "uuid": "power-profile-cycler@solder3t",
   "settings-schema": "power-profile-cycler@solder3t",
   "name": "Power Profile Cycler",
-  "description": "Cycle GNOME power profiles with a shortcut, menu, and center-bottom OSD",
+  "description": "Cycle GNOME power profiles with a shortcut and center-bottom OSD",
   "version": 2,
   "shell-version": ["50.0"],
   "url": "https://github.com/solder3t/power-profile-cycler"

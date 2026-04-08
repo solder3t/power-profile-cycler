@@ -7,7 +7,7 @@ A GNOME Shell extension that cycles through power profiles with a keyboard short
 - Cycle between `power-saver`, `balanced`, and `performance`
 - User-configurable keyboard shortcut from the GNOME Extensions preferences window
 - Optional GNOME-style OSD when the profile changes
-- No panel icon or menu
+- No panel icon
 
 ## Requirements
 
@@ -17,19 +17,23 @@ A GNOME Shell extension that cycles through power profiles with a keyboard short
 
 ## Installation
 
-### From source
+### From source checkout
 
-1. Copy this extension into your local GNOME Shell extensions directory:
+1. Copy only the extension files into your local GNOME Shell extensions directory:
 
 ```bash
-mkdir -p ~/.local/share/gnome-shell/extensions/power-profile-cycler@solder3t
-cp -r . ~/.local/share/gnome-shell/extensions/power-profile-cycler@solder3t
+UUID="power-profile-cycler@solder3t"
+DEST="$HOME/.local/share/gnome-shell/extensions/$UUID"
+
+mkdir -p "$DEST/schemas"
+cp extension.js metadata.json prefs.js "$DEST/"
+cp schemas/org.gnome.shell.extensions.power-profile-cycler.gschema.xml "$DEST/schemas/"
 ```
 
 2. Compile the schema:
 
 ```bash
-glib-compile-schemas ~/.local/share/gnome-shell/extensions/power-profile-cycler@solder3t/schemas
+glib-compile-schemas "$DEST/schemas"
 ```
 
 3. Reload GNOME Shell extensions:
@@ -40,6 +44,21 @@ glib-compile-schemas ~/.local/share/gnome-shell/extensions/power-profile-cycler@
 4. Enable the extension:
 
 ```bash
+gnome-extensions enable power-profile-cycler@solder3t
+```
+
+### From packaged zip
+
+Build the zip locally:
+
+```bash
+./scripts/package.sh
+```
+
+Then install it with:
+
+```bash
+gnome-extensions install --force dist/power-profile-cycler@solder3t.shell-extension.zip
 gnome-extensions enable power-profile-cycler@solder3t
 ```
 
@@ -61,9 +80,12 @@ Press the configured shortcut to cycle to the next available power profile.
 To update the installed local copy during development:
 
 ```bash
-cp extension.js metadata.json prefs.js ~/.local/share/gnome-shell/extensions/power-profile-cycler@solder3t/
-cp schemas/org.gnome.shell.extensions.power-profile-cycler.gschema.xml ~/.local/share/gnome-shell/extensions/power-profile-cycler@solder3t/schemas/
-glib-compile-schemas ~/.local/share/gnome-shell/extensions/power-profile-cycler@solder3t/schemas
+UUID="power-profile-cycler@solder3t"
+DEST="$HOME/.local/share/gnome-shell/extensions/$UUID"
+
+cp extension.js metadata.json prefs.js "$DEST/"
+cp schemas/org.gnome.shell.extensions.power-profile-cycler.gschema.xml "$DEST/schemas/"
+glib-compile-schemas "$DEST/schemas"
 ```
 
 ## Packaging
@@ -74,7 +96,7 @@ Build a distributable extension zip locally with:
 ./scripts/package.sh
 ```
 
-The output is written to `dist/`.
+The output is written to `dist/` as `power-profile-cycler@solder3t.shell-extension.zip`.
 
 ## GitHub Releases
 
