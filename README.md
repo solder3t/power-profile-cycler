@@ -66,6 +66,22 @@ cp schemas/org.gnome.shell.extensions.power-profile-cycler.gschema.xml ~/.local/
 glib-compile-schemas ~/.local/share/gnome-shell/extensions/power-profile-cycler@solder3t/schemas
 ```
 
+## Packaging
+
+Build a distributable extension zip locally with:
+
+```bash
+./scripts/package.sh
+```
+
+The output is written to `dist/`.
+
+## GitHub Releases
+
+- Push a tag like `v1.0.0`
+- GitHub Actions will build the extension zip
+- The workflow uploads the zip as both an artifact and a GitHub release asset
+
 ## License
 
 MIT
