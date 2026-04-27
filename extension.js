@@ -7,10 +7,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const EXTENSION_SCHEMA_ID = 'power-profile-cycler@solder3t';
-const POWER_PROFILES_BUS_NAME = 'org.freedesktop.UPower.PowerProfiles';
-const POWER_PROFILES_OBJECT_PATH = '/org/freedesktop/UPower/PowerProfiles';
-const POWER_PROFILES_INTERFACE_NAME = 'org.freedesktop.UPower.PowerProfiles';
-const POWER_PROFILES_INTERFACE = `
+const UPOWER_INTERFACE = `
 <node>
     <interface name="org.freedesktop.UPower.PowerProfiles">
         <property name="ActiveProfile" type="s" access="readwrite"/>
@@ -18,7 +15,29 @@ const POWER_PROFILES_INTERFACE = `
     </interface>
 </node>`;
 
-const PowerProfilesProxy = Gio.DBusProxy.makeProxyWrapper(POWER_PROFILES_INTERFACE);
+const HADESS_INTERFACE = `
+<node>
+    <interface name="net.hadess.PowerProfiles">
+        <property name="ActiveProfile" type="s" access="readwrite"/>
+        <property name="Profiles" type="aa{sv}" access="read"/>
+    </interface>
+</node>`;
+
+const UPowerProxy = Gio.DBusProxy.makeProxyWrapper(UPOWER_INTERFACE);
+const HadessProxy = Gio.DBusProxy.makeProxyWrapper(HADESS_INTERFACE);
+
+const BUS_CONFIGS = [
+    {
+        busName: 'org.freedesktop.UPower.PowerProfiles',
+        objectPath: '/org/freedesktop/UPower/PowerProfiles',
+        ProxyClass: UPowerProxy,
+    },
+    {
+        busName: 'net.hadess.PowerProfiles',
+        objectPath: '/net/hadess/PowerProfiles',
+        ProxyClass: HadessProxy,
+    },
+];
 
 export default class PowerProfileCyclerExtension extends Extension {
     enable() {
@@ -50,23 +69,33 @@ export default class PowerProfileCyclerExtension extends Extension {
     }
 
     _connectPowerProfilesProxy() {
-        this._powerProfilesProxy = new PowerProfilesProxy(
-            Gio.DBus.system,
-            POWER_PROFILES_BUS_NAME,
-            POWER_PROFILES_OBJECT_PATH,
-            (proxy, error) => {
-                if (error) {
-                    console.error(`Error creating power profiles proxy: ${error.message}`);
-                    this._powerProfilesProxy = null;
-                    return;
-                }
-
-                this._powerProfilesChangedId = proxy.connect('g-properties-changed', () => {
-                    this._refreshCachedProfile();
-                });
-                this._refreshCachedProfile();
+        const tryConnect = (index) => {
+            if (index >= BUS_CONFIGS.length) {
+                console.error('Power Profile Cycler: Could not find any power profile service on DBus');
+                return;
             }
-        );
+
+            const { busName, objectPath, ProxyClass } = BUS_CONFIGS[index];
+            new ProxyClass(
+                Gio.DBus.system,
+                busName,
+                objectPath,
+                (proxy, error) => {
+                    if (error || !proxy.g_name_owner) {
+                        tryConnect(index + 1);
+                        return;
+                    }
+
+                    this._powerProfilesProxy = proxy;
+                    this._powerProfilesChangedId = proxy.connect('g-properties-changed', () => {
+                        this._refreshCachedProfile();
+                    });
+                    this._refreshCachedProfile();
+                }
+            );
+        };
+
+        tryConnect(0);
     }
 
     _setupKeyboardShortcut() {
@@ -99,7 +128,7 @@ export default class PowerProfileCyclerExtension extends Extension {
         try {
             return this._powerProfilesProxy.get_cached_property(name);
         } catch (e) {
-            console.error(`Error reading power profile property ${name}: ${e}`);
+            console.error(`Power Profile Cycler: Error reading property ${name}: ${e}`);
             return null;
         }
     }
@@ -137,12 +166,18 @@ export default class PowerProfileCyclerExtension extends Extension {
     }
 
     _setPowerProfile(profile) {
-        let [success, , stderr] = GLib.spawn_command_line_sync(`powerprofilesctl set ${profile}`);
-        if (!success)
-            throw new Error(stderr.toString().trim() || `Failed to set profile to ${profile}`);
+        if (!this._powerProfilesProxy) {
+            console.error('Power Profile Cycler: Cannot set profile, DBus proxy not connected');
+            return;
+        }
 
-        this._lastKnownProfile = profile;
-        this._showProfileOsd(profile);
+        try {
+            this._powerProfilesProxy.ActiveProfile = GLib.Variant.new_string(profile);
+            this._lastKnownProfile = profile;
+            this._showProfileOsd(profile);
+        } catch (e) {
+            console.error(`Power Profile Cycler: Error setting profile to ${profile}: ${e}`);
+        }
     }
 
     _cyclePowerProfile() {
