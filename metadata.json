@@ -3,7 +3,7 @@
   "settings-schema": "power-profile-cycler@solder3t",
   "name": "Power Profile Cycler",
   "description": "Cycle GNOME power profiles with a shortcut and center-bottom OSD",
-  "version": 2,
+  "version": 3,
   "shell-version": [
     "45",
     "46",

@@ -12,8 +12,7 @@ A GNOME Shell extension that cycles through power profiles with a keyboard short
 ## Requirements
 
 - GNOME Shell 49 or 50
-- `power-profiles-daemon`
-- `powerprofilesctl`
+- `power-profiles-daemon` (or a compatible daemon like `tuned` providing `tuned-ppd`)
 
 ## Installation
 
