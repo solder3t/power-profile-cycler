@@ -5,9 +5,6 @@
   "description": "Cycle GNOME power profiles with a shortcut and center-bottom OSD",
   "version": 3,
   "shell-version": [
-    "45",
-    "46",
-    "47",
     "48",
     "49",
     "50"
