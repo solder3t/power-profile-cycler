@@ -141,4 +141,4 @@ The workflow will build the extension zip and then create or update the GitHub r
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
