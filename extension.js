@@ -7,10 +7,10 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const EXTENSION_SCHEMA_ID = 'power-profile-cycler@solder3t';
-const POWER_PROFILES_BUS_NAME = 'org.freedesktop.UPower.PowerProfiles';
-const POWER_PROFILES_OBJECT_PATH = '/org/freedesktop/UPower/PowerProfiles';
-const POWER_PROFILES_INTERFACE_NAME = 'org.freedesktop.UPower.PowerProfiles';
-const POWER_PROFILES_INTERFACE = `
+
+const NEW_BUS_NAME = 'org.freedesktop.UPower.PowerProfiles';
+const NEW_OBJECT_PATH = '/org/freedesktop/UPower/PowerProfiles';
+const NEW_INTERFACE = `
 <node>
     <interface name="org.freedesktop.UPower.PowerProfiles">
         <property name="ActiveProfile" type="s" access="readwrite"/>
@@ -18,10 +18,22 @@ const POWER_PROFILES_INTERFACE = `
     </interface>
 </node>`;
 
-const PowerProfilesProxy = Gio.DBusProxy.makeProxyWrapper(POWER_PROFILES_INTERFACE);
+const LEGACY_BUS_NAME = 'net.hadess.PowerProfiles';
+const LEGACY_OBJECT_PATH = '/net/hadess/PowerProfiles';
+const LEGACY_INTERFACE = `
+<node>
+    <interface name="net.hadess.PowerProfiles">
+        <property name="ActiveProfile" type="s" access="readwrite"/>
+        <property name="Profiles" type="aa{sv}" access="read"/>
+    </interface>
+</node>`;
+
+const NewPowerProfilesProxy = Gio.DBusProxy.makeProxyWrapper(NEW_INTERFACE);
+const LegacyPowerProfilesProxy = Gio.DBusProxy.makeProxyWrapper(LEGACY_INTERFACE);
 
 export default class PowerProfileCyclerExtension extends Extension {
     enable() {
+        this._enabled = true;
         this._settings = this.getSettings(EXTENSION_SCHEMA_ID);
         this._powerProfilesProxy = null;
         this._powerProfilesChangedId = 0;
@@ -33,6 +45,7 @@ export default class PowerProfileCyclerExtension extends Extension {
     }
 
     disable() {
+        this._enabled = false;
         Main.wm.removeKeybinding('keyboard-shortcut');
 
         if (this._shortcutChangedId) {
@@ -49,24 +62,54 @@ export default class PowerProfileCyclerExtension extends Extension {
         this._settings = null;
     }
 
-    _connectPowerProfilesProxy() {
-        this._powerProfilesProxy = new PowerProfilesProxy(
+    _connectProxy(busName, objectPath, proxyClass, callback) {
+        return new proxyClass(
             Gio.DBus.system,
-            POWER_PROFILES_BUS_NAME,
-            POWER_PROFILES_OBJECT_PATH,
+            busName,
+            objectPath,
             (proxy, error) => {
-                if (error) {
-                    console.error(`Error creating power profiles proxy: ${error.message}`);
-                    this._powerProfilesProxy = null;
+                if (error || !proxy.g_name_owner) {
+                    callback(null, error || new Error(`No owner for bus name ${busName}`));
                     return;
                 }
+                callback(proxy, null);
+            }
+        );
+    }
 
+    _connectPowerProfilesProxy() {
+        this._powerProfilesProxy = null;
+
+        this._connectProxy(NEW_BUS_NAME, NEW_OBJECT_PATH, NewPowerProfilesProxy, (proxy, error) => {
+            if (!this._enabled)
+                return;
+
+            if (proxy) {
+                this._powerProfilesProxy = proxy;
                 this._powerProfilesChangedId = proxy.connect('g-properties-changed', () => {
                     this._refreshCachedProfile();
                 });
                 this._refreshCachedProfile();
+                console.log(`Power Profile Cycler: Connected to ${NEW_BUS_NAME}`);
+            } else {
+                console.log(`Power Profile Cycler: ${NEW_BUS_NAME} not available (${error?.message}). Trying legacy fallback...`);
+                this._connectProxy(LEGACY_BUS_NAME, LEGACY_OBJECT_PATH, LegacyPowerProfilesProxy, (legacyProxy, legacyError) => {
+                    if (!this._enabled)
+                        return;
+
+                    if (legacyProxy) {
+                        this._powerProfilesProxy = legacyProxy;
+                        this._powerProfilesChangedId = legacyProxy.connect('g-properties-changed', () => {
+                            this._refreshCachedProfile();
+                        });
+                        this._refreshCachedProfile();
+                        console.log(`Power Profile Cycler: Connected to legacy ${LEGACY_BUS_NAME}`);
+                    } else {
+                        console.error(`Power Profile Cycler: Failed to connect to any power-profiles-daemon D-Bus interface: ${legacyError?.message}`);
+                    }
+                });
             }
-        );
+        });
     }
 
     _setupKeyboardShortcut() {
@@ -92,40 +135,46 @@ export default class PowerProfileCyclerExtension extends Extension {
         );
     }
 
-    _getCachedProperty(name) {
+    _refreshCachedProfile() {
         if (!this._powerProfilesProxy)
-            return null;
+            return;
 
         try {
-            return this._powerProfilesProxy.get_cached_property(name);
+            let activeProfile = this._powerProfilesProxy.ActiveProfile;
+            if (activeProfile instanceof GLib.Variant)
+                activeProfile = activeProfile.unpack();
+
+            if (activeProfile)
+                this._lastKnownProfile = activeProfile;
         } catch (e) {
-            console.error(`Error reading power profile property ${name}: ${e}`);
-            return null;
+            console.error(`Error refreshing cached power profile: ${e}`);
         }
     }
 
-    _refreshCachedProfile() {
-        let activeProfileVariant = this._getCachedProperty('ActiveProfile');
-        if (!activeProfileVariant)
-            return;
-
-        let activeProfile = activeProfileVariant.unpack();
-        if (activeProfile)
-            this._lastKnownProfile = activeProfile;
-    }
-
     _getAvailablePowerProfiles() {
-        let profilesVariant = this._getCachedProperty('Profiles');
-        if (profilesVariant) {
-            let profiles = profilesVariant.deepUnpack()
-                .map(profileInfo => {
-                    let profile = profileInfo.Profile ?? profileInfo['Profile'];
-                    return profile instanceof GLib.Variant ? profile.unpack() : profile;
-                })
-                .filter(profile => profile);
+        if (!this._powerProfilesProxy)
+            return ['power-saver', 'balanced', 'performance'];
 
-            if (profiles.length > 0)
-                return profiles;
+        try {
+            let profiles = this._powerProfilesProxy.Profiles;
+            if (profiles) {
+                if (profiles instanceof GLib.Variant)
+                    profiles = profiles.deepUnpack();
+
+                if (Array.isArray(profiles)) {
+                    let unpackedProfiles = profiles.map(profileInfo => {
+                        let profile = profileInfo.Profile ?? profileInfo['Profile'];
+                        if (profile instanceof GLib.Variant)
+                            return profile.unpack();
+                        return profile;
+                    }).filter(profile => typeof profile === 'string');
+
+                    if (unpackedProfiles.length > 0)
+                        return unpackedProfiles;
+                }
+            }
+        } catch (e) {
+            console.error(`Error getting available power profiles: ${e}`);
         }
 
         return ['power-saver', 'balanced', 'performance'];
@@ -137,12 +186,17 @@ export default class PowerProfileCyclerExtension extends Extension {
     }
 
     _setPowerProfile(profile) {
-        let [success, , stderr] = GLib.spawn_command_line_sync(`powerprofilesctl set ${profile}`);
-        if (!success)
-            throw new Error(stderr.toString().trim() || `Failed to set profile to ${profile}`);
+        if (!this._powerProfilesProxy)
+            throw new Error('Power profiles proxy is not connected');
 
-        this._lastKnownProfile = profile;
-        this._showProfileOsd(profile);
+        try {
+            this._powerProfilesProxy.ActiveProfile = profile;
+            this._lastKnownProfile = profile;
+            this._showProfileOsd(profile);
+        } catch (e) {
+            console.error(`Error setting power profile to ${profile}: ${e}`);
+            throw e;
+        }
     }
 
     _cyclePowerProfile() {
